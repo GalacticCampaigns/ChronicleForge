@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<html>
+  {% include head.html %}
+  <body>
+    {% include navbar.html %}
+
+    <header class="hero-section">
+        <div class="container-hero">
+            <img src="{{ '/assets/gc_banner.png' | relative_url }}" alt="Logo" id="site-logo" class="site-logo">
+            <p id="flavor-text" class="flavor-text">
+                Select a frequency to begin decryption.
+            </p>
+        </div>
+    </header>
+
+    <main> 
+        {{ content }}
+    </main>
+
+    {% include footer.html %}
+
+
+</body>
+</html>

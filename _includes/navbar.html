@@ -1,0 +1,33 @@
+<nav class="site-nav">
+    <div class="nav-inner" style="display:flex; width:100%; align-items:center; justify-content: space-between;">
+        
+        <div class="campaign-selector-wrapper">
+            <a href="{{ '/' | relative_url }}" id="nav-brand-text" class="nav-brand">Galactic Campaigns</a>
+            
+            <div class="selector-container">
+                <select id="campaign-dropdown" onchange="switchCampaign(this.value)">
+                    <option value="" disabled selected></option>
+                    <option value="hub">-- Global Hub --</option>
+                </select>
+                <span class="selector-arrow">▼</span>
+            </div>
+        </div>
+
+        <div class="nav-links" id="dynamic-nav-links">
+            <a href="{{ '/' | relative_url }}" id="hub-home">Home</a>
+            <a href="#" id="nav-archives" class="campaign-link">Archives</a>
+            <a href="#" id="nav-wiki" class="campaign-link" target="_blank">Wiki</a>
+        </div>
+    </div>
+</nav>
+
+<script>
+    window.site_baseurl = "{{ '' | relative_url }}";
+</script>
+<script src="{{ '/assets/js/navigation.js' | relative_url }}?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+<script>
+function switchCampaign(slug) {
+    const url = (slug === "hub" || !slug) ? window.site_baseurl + "/" : window.site_baseurl + "/?c=" + slug;
+    window.location.href = url;
+}
+</script>

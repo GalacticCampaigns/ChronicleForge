@@ -1,0 +1,72 @@
+---
+layout: default
+---
+
+<style>
+/* 1. CONTAINER STABILIZATION */
+.log-container-json { width: 100%; padding-top: 20px; }
+
+/* 2. SECONDARY FREQUENCY BAR */
+.frequency-nav-bar { 
+    position: sticky; 
+    top: calc(var(--site-nav-height) + var(--log-nav-height)); 
+    z-index: 7000; background: var(--secondary-bg);
+    border-bottom: 1px solid var(--gh-border); padding: 12px 0;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5); display: none;
+}
+
+.freq-container { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; max-width: 900px; margin: 0 auto; padding: 0 15px; }
+
+.comms-status { 
+    width: 100%; padding-bottom: 8px; font-size: 0.6rem; color: var(--sw-yellow); 
+    font-family: monospace; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 5px;
+}
+
+/* 3. TRANSITIONS */
+.channel-transition { 
+    display: flex; align-items: center; justify-content: center; 
+    margin: 40px 0 20px; padding: 15px; 
+    background: rgba(88,166,255,0.05); border: 1px dashed var(--accent-blue); 
+    color: var(--accent-blue); font-family: monospace; font-size: 0.75rem; 
+    letter-spacing: 2px; text-transform: uppercase; cursor: pointer; 
+}
+
+
+@keyframes highlightPing {
+    0% { background-color: rgba(255, 215, 0, 0.3); border-left: 4px solid var(--sw-yellow); }
+    100% { background-color: transparent; border-left: 4px solid transparent; }
+}
+
+.highlight-flash {
+    animation: highlightPing 3s ease-out;
+}
+</style>
+
+<header class="frozen-nav">
+    <div class="nav-inner">
+        <a href="javascript:void(0)" id="back-to-archives" class="toc-open-btn">⇠</a>
+
+        <div class="log-breadcrumb">
+            <div class="breadcrumb-item chapter-trigger" onclick="toggleChapterList()">
+                <span id="active-chapter-name">LOADING...</span>
+                <div id="chapter-list-dropdown" class="custom-nav-dropdown"></div>
+            </div>
+            
+            <div class="breadcrumb-item" id="thread-indicator"></div>
+        </div>
+
+        <button id="thread-toggle" class="toc-open-btn" onclick="toggleFrequencies()" style="display:none;">📡</button>
+    </div>
+</header>
+
+<div id="frequency-selector" class="frequency-nav-bar">
+    <div class="freq-container" id="freq-buttons-target"></div>
+</div>
+
+<div class="log-container-json">
+    <div id="viewer-output">{{ content }}</div>
+</div>
+
+<script src="{{ '/assets/js/navigation.js' | relative_url }}?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+
+<script src="{{ '/assets/js/log.js' | relative_url }}?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
