@@ -136,30 +136,20 @@ class Navigator:
                 if stats["abs_last_id"]:
                     t["last_synced_id"] = stats["abs_last_id"]
 
-    def should_sync(self, entry, token, force_all=False):
-        """API Pre-Check: Evaluates narrative delta before triggering Miner."""
-        if not entry.get("isActive", True): return False, None
-        # Skip Miner for Legacy Archives
-        if entry.get("syncStatus") == "legacy": return False, None
-
-        last_id = str(entry.get("last_synced_id", ""))
-        target_id = entry.get("channelID") or entry.get("threadID")
-        camp_name = entry.get("title", target_id)
-        
+def _check_channel_activity(self, channel_id, last_id, token):
+        """Internal helper to check a specific ID for new narrative content."""
         headers = {"Authorization": f"Bot {token}"}
-        url = f"https://discord.com/api/v10/channels/{target_id}/messages?limit=10"
+        url = f"https://discord.com/api/v10/channels/{channel_id}/messages?limit=10"
         
         try:
             resp = requests.get(url, headers=headers, timeout=15)
             if resp.status_code != 200:
-                err = resp.json().get('message', 'Access Denied')
-                self.update_report("System", "⚠️ ACCESS DENIED", f"{camp_name}: {err}")
                 return False, None
             
             messages = resp.json()
             if not messages: return False, None
 
-            # Find the newest NARRATIVE Snowflake (v10 API Mapping)
+            # Find the newest NARRATIVE Snowflake (Forge API Mapping)
             latest_ic_id = None
             for msg in messages:
                 if msg.get("type") in NARRATIVE_TYPES:
@@ -176,20 +166,46 @@ class Navigator:
                     has_new = int(latest_ic_id) > int(last_id)
                 except ValueError:
                     has_new = latest_ic_id != last_id
-
-            # Forge Wake-Up Logic
-            if has_new and entry.get("syncStatus") == "stable":
-                print(f"      [Wake-Up] Activity detected in stable chapter: {camp_name}")
-                entry["syncStatus"] = "active"
-
-            if force_all: return True, latest_ic_id
-            if entry.get("syncStatus") == "stable": return False, latest_ic_id
-
+                
             return has_new, latest_ic_id
-
-        except Exception as e:
-            self.update_report("System", "💥 TIMEOUT", f"Check failed for {camp_name}: {str(e)}")
+        except Exception:
             return False, None
+
+    def should_sync(self, entry, token, force_all=False):
+        """
+        Wide-Search API Check: Evaluates parent and child threads before mining.
+        Ensures side-scenes trigger a sync even if the main chapter is idle.
+        """
+        if not entry.get("isActive", True): return False, None
+        if entry.get("syncStatus") == "legacy": return False, None
+
+        last_id = str(entry.get("last_synced_id", ""))
+        parent_id = entry.get("channelID") or entry.get("threadID")
+        camp_name = entry.get("title", parent_id)
+        
+        # 1. Primary Check: The Parent Channel
+        has_new_content, latest_id = self._check_channel_activity(parent_id, last_id, token)
+        
+        # 2. Wide-Search: Check active child threads if parent was quiet
+        if not has_new_content:
+            for thread in entry.get("threads", []):
+                if thread.get("isActive", True):
+                    t_has_new, t_latest_id = self._check_channel_activity(thread["threadID"], last_id, token)
+                    if t_has_new:
+                        has_new_content = True
+                        latest_id = t_latest_id
+                        break 
+
+        # Forge Wake-Up Logic
+        if has_new_content and entry.get("syncStatus") == "stable":
+            print(f"      [Wake-Up] Activity detected in stable chapter: {camp_name}")
+            entry["syncStatus"] = "active"
+
+        if force_all: return True, latest_id
+        if entry.get("syncStatus") == "stable" and not has_new_content: 
+            return False, latest_id
+
+        return has_new_content, latest_id
 
     def finalize_run(self, is_dry_run=False):
         """Saves registry, synchronizes brain to GitHub, and dispatches Forge reports."""
