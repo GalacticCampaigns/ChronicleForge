@@ -24,16 +24,17 @@ class Navigator:
         self.registry = registry_data
         self.report_log = {}
 
-    def update_report(self, camp_name, action, title, count=0, nsfw_count=0):
-        """Logs activity or errors to the final Forge dispatch report."""
+    def update_report(self, camp_name, action, title, count=0, nsfw_count=0, added=0):
+        """Logs activity or errors to the final dispatch report."""
         if camp_name not in self.report_log:
             self.report_log[camp_name] = []
         
         self.report_log[camp_name].append({
             "action": action, 
             "title": title, 
-            "count": count,
-            "nsfw_count": nsfw_count
+            "count": count,       # The new grand total
+            "nsfw_count": nsfw_count,
+            "added": added        # The delta (new messages only)
         })
     
     def analyze_and_merge(self, log_entry, refined_messages):

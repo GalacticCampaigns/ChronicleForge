@@ -99,8 +99,8 @@ def run_orchestrator(nav, token, dry_run=False, force_all=False):
                             nav.update_report(camp_name, "⚠️ MINER WARNING", 
                                              f"{log['title']}: {sync_status['error']}")
                         elif sync_status:
-                            # --- STAGE D: FORENSICS ---
-                            # Re-verify the Gold file for counts and NSFW status
+                            # --- FORENSICS & REFINEMENT ---
+                            # Re-verify the Gold file to update message counts and NSFW status
                             json_rel = camp_data.get("paths", {}).get("json", "json/")
                             data_path = camp_data.get("dataPath", "./")
                             
@@ -116,21 +116,28 @@ def run_orchestrator(nav, token, dry_run=False, force_all=False):
                                         final_msgs = json.load(gf)
                                         forensics = nav.analyze_and_merge(log, final_msgs)
                                         
-                                        # Apply logic-driven updates back to Registry memory
+                                        # --- INCREMENTAL DETECTION ---
+                                        # 1. Capture the count from memory BEFORE applying forensics
+                                        old_count = log.get("messageCount", 0)
+                                        new_total = forensics["grand_total"]
+                                        added_delta = new_total - old_count
+
+                                        # 2. Update Registry memory with new forensics
                                         nav.apply_forensics_to_registry(
                                             log, forensics, 
                                             api_id_stamp=latest_api_id
                                         )
 
-                                        # Log increase in narrative volume
-                                        if forensics["grand_total"] > log.get("messageCount", 0):
+                                        # 3. Report the Delta (New or Potential)
+                                        if added_delta > 0:
                                             nav.update_report(
                                                 camp_name, "Refined", log.get("title"), 
-                                                count=forensics["grand_total"], 
-                                                nsfw_count=forensics["grand_nsfw"]
+                                                count=new_total, 
+                                                nsfw_count=forensics["grand_nsfw"],
+                                                added=added_delta
                                             )
                                     except json.JSONDecodeError:
-                                        nav.update_report(camp_name, "💥 FILE ERROR", f"Corrupt JSON: {log['fileName']}")
+                                        nav.update_report(camp_name, "💥 FILE ERROR", f"Corrupt JSON at {log['fileName']}")
 
             # --- STAGE E: DEEP FREEZE (GIT PUSH) ---
             if not dry_run:
