@@ -10,8 +10,14 @@ import scripts.git_sync as git_sync
 
 # Narrative Types for Refinement logic (DCE Types mapped to API Integers)
 # 0: Default, 19: Reply, 21: ThreadStarter
-NARRATIVE_TYPES = FORGE_CONFIG.get("forensics", "narrative_types")
-NSFW_KEYWORDS = FORGE_CONFIG.get("forensics", "nsfw_keywords")
+try:
+    # Attempt to load from global config if available
+    NARRATIVE_TYPES = FORGE_CONFIG.get("forensics", "narrative_types")
+    NSFW_KEYWORDS = FORGE_CONFIG.get("forensics", "nsfw_keywords")
+except (NameError, AttributeError):
+    # Standard fallback defaults
+    NARRATIVE_TYPES = [0, 19, 21]
+    NSFW_KEYWORDS = ["🔞", "nsfw", "underage", "18+"]
 
 class Navigator:
     def __init__(self, registry_data):
@@ -136,7 +142,7 @@ class Navigator:
                 if stats["abs_last_id"]:
                     t["last_synced_id"] = stats["abs_last_id"]
 
-def _check_channel_activity(self, channel_id, last_id, token):
+    def _check_channel_activity(self, channel_id, last_id, token):
         """Internal helper to check a specific ID for new narrative content."""
         headers = {"Authorization": f"Bot {token}"}
         url = f"https://discord.com/api/v10/channels/{channel_id}/messages?limit=10"
