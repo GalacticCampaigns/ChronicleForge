@@ -115,26 +115,54 @@ This is crucial for **Pillar 4 (Portability)**. It allows the Forge to manage mu
 ---
 
 ## Part 4: The Brain (`campaign-registry.json`)
-Initialize your registry file. The Forge will "Self-Heal" missing keys automatically during the first run.
+
+The `campaign-registry.json` file is the "Single Source of Truth" for the Chronicle Forge. It tracks where your narrative lives in Discord and how it should be archived on GitHub. The Forge is designed to be resilient; if you provide the core IDs, the engine will "Self-Heal" by injecting missing metadata keys automatically during its first run.
+
+### Initial Configuration
+Replace the template values with your specific server details. You can define multiple campaigns by adding new keys to the `campaigns` object.
 
 ```json
 {
   "campaigns": {
-    "my-campaign": {
+    "pseudonym-slug": {
       "name": "My Epic RP",
       "guild_id": "123456789...",
       "category_id": "987654321...",
+      "forum_ids": ["1122334455...", "6677889900..."],
+      "auto_scan_pattern": "ch|chapter|prelude",
       "repository": "self",
       "branch": "main",
-      "dataPath": "./vault/my-campaign",
+      "dataPath": "./vault/pseudonym-slug",
       "paths": { "json": "json/", "media": "media/", "avatars": "avatars/" },
       "logs": []
     }
   }
 }
 ```
-* **`repository`**: Set to `"self"` for Mono-Repo or `User/repo-name` for Split-Repo.
-* **`dataPath`**: The relative folder where narrative JSON and media will be "Deep Frozen".
+
+### Configuration Key Reference
+
+#### 1. Identity & Discovery
+* **`pseudonym-slug` (The Key)**: This is the unique internal identifier for your campaign. It should be URL-friendly (use lowercase and hyphens, e.g., `forgotten-ones`).
+* **`name`**: The human-readable title displayed in the web gallery and email reports.
+* **`guild_id`**: The unique Snowflake ID of the Discord server.
+* **`category_id`**: The Snowflake ID of the Discord **Category folder**. The Scout will look inside this category for individual narrative text channels. **Note:** If your game is isolated to a single channel using threads as chapters, leave this field blank (`""`).
+* **`forum_ids` (Optional)**: A list of Snowflake IDs for **Forum Channels** or **Standard Text Channels**. When provided, the Scout treats individual threads within these channels as top-level standalone Chapters. Use this field if your GMs use threads for chapters inside a single "hub" channel.
+* **`auto_scan_pattern` (Optional)**: A Regex string that limits which channels or threads the Scout adds. For example, `"ch|prelude"` ensures only content matching those terms is archived.
+
+#### 2. Git & Filesystem Integration
+* **`repository`**: 
+    * Set to `"self"` if your data is stored in the same repository as the Chronicle Forge engine (Mono-Repo).
+    * Set to the shorthand GitHub path (e.g., `User/repo-name`) if using a separate repository for logs.
+* **`branch`**: The target Git branch for synchronization (defaults to `"main"`).
+* **`dataPath`**: The directory path **relative to the root of your repository** where the Forge will save narrative JSON and media files. (See ["How to choose this path"](ChoosingYourDataPath.md)).
+* **`paths`**: Defines the sub-directory structure **within your `dataPath`** for different asset types.
+    * `json/`: Stores the high-fidelity narrative files.
+    * `media/`: Stores truncated and localized attachments.
+    * `avatars/`: Stores the global user avatar cache.
+
+#### 3. State Management (Leave as default)
+* **`logs`**: Always initialize this as an empty array (`[]`). The Scout will populate this list with discovered chapters and threads during the first run.
 
 ---
 
