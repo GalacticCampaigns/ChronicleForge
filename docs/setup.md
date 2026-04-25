@@ -35,7 +35,8 @@ The Forge requires a dedicated Discord Bot to act as its "eyes" and download ass
 *Use this if you already have separate repositories for your Website and Campaign logs.*
 
 1.  **Prepare Destination Repos:** Ensure you have repositories ready for your **Website** and each **Campaign**.
-2.  **Configure Secrets:** * `DISCORD_TOKEN`: Your bot token.
+2.  **Configure Secrets:** 
+    * `DISCORD_TOKEN`: Your bot token.
     * `WEBSITE_REPO`: Shorthand for your website repo (e.g., `User/my-site`).
     * `REGISTRY_URL`: The Raw GitHub URL to your `campaign-registry.json`.
 3.  **SSH Aliasing (Local/Pi Only):** If running on hardware, update `~/.ssh/config` with aliases matching your `refinery-config.json`.
@@ -138,24 +139,49 @@ Initialize your registry file. The Forge will "Self-Heal" missing keys automatic
 ---
 
 ## Part 5: Operation
-The Forge detects if it is in the **CLOUD** (Codespaces) or **LOCAL** (Pi/Linux) and adjusts permissions accordingly.
+The Chronicle Forge is managed through a single command-line interface. The system automatically detects its environment (**CLOUD** vs. **LOCAL**) to adjust file permissions and Git authentication logic accordingly.
 
-### 1. Discovery (The Scout)
-Populate your registry with new channels and threads:
+### Core Execution Command
+```bash
+python3 -m scripts.pull_logs [FLAGS]
+```
+
+### Understanding the Flags
+The orchestrator supports two primary flags to control the depth and destination of the sync:
+
+* **`-d`, `--dry-run` (Simulation Mode)**
+    * **What it does:** Executes the full pipeline—Scouting, Mining, and Refining—but **stops before the finalization phase**.
+    * **How to use it:** Use this for initial server setup or testing. It allows you to verify that narrative content is being captured correctly in your local vault folders without pushing changes to GitHub.
+* **`-f`, `--force` (Full Audit Mode)**
+    * **What it does:** Bypasses the incremental "High-Water Mark" (`last_synced_id`) and ignores the `syncStatus: stable` flag.
+    * **How to use it:** Use this to perform a total refresh of your narrative history. It forces the engine to re-download every message in every registered channel, which is useful if you have edited old Discord posts or updated your detection keywords.
+
+---
+
+### Common Operational Workflows
+
+#### 1. Server Discovery
+To scan your server for new chapters and threads and populate your local registry without committing data to your repositories:
 ```bash
 python3 -m scripts.pull_logs -d
 ```
 
-### 2. Full Sync (The Deep Freeze)
-Mine the history, mirror all assets to the Vault, and push to GitHub:
+#### 2. Standard Archival
+The default command for daily or regular synchronization. This incrementally mines new narrative content, mirrors all assets to your Vault, and pushes the updated "Gold" standard to GitHub.
 ```bash
 python3 -m scripts.pull_logs
 ```
 
-### 3. Forensic Audit
-Force a re-scan of existing "Gold" JSON to update message counts or safety labels:
+#### 3. Legacy Refresh
+To force a complete re-scan of every chapter currently in your registry, ensuring all message counts and safety labels are perfectly accurate:
 ```bash
 python3 -m scripts.pull_logs -f
+```
+
+#### 4. The Combined Refresh
+To perform a complete history refresh locally for verification before a live deployment:
+```bash
+python3 -m scripts.pull_logs -f -d
 ```
 
 ---

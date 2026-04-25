@@ -1,0 +1,14 @@
+{
+  "campaigns": {
+    "my-campaign": {
+      "name": "My Epic RP",
+      "guild_id": "123456789...",
+      "category_id": "987654321...",
+      "repository": "self",
+      "branch": "main",
+      "dataPath": "./vault/my-campaign",
+      "paths": { "json": "json/", "media": "media/", "avatars": "avatars/" },
+      "logs": []
+    }
+  }
+}
