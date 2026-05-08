@@ -2,6 +2,7 @@
 backup/
 temp_git_sync/
 tests/
+wiki
 
 
 # Byte-compiled / optimized / DLL files
