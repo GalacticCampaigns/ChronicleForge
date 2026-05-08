@@ -10,8 +10,7 @@ from .utils import (
     to_snowflake, 
     extract_pure_hash, 
     sanitize_resource_name,
-    resolve_vault_path,
-    ROOT_DIR
+    resolve_vault_path
 )
 
 # Narrative Types for Roleplay identification

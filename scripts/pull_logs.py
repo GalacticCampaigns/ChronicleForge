@@ -12,14 +12,13 @@ from .utils import (
     get_repo_folder_name,
     resolve_vault_path,
     LOCAL_REGISTRY,
-    TEMP_EXPORT_DIR,
-    ROOT_DIR
+    TEMP_EXPORT_DIR
 )
 
 from .navigator import Navigator
 from .miner import Miner
-import scripts.scanner as scanner 
-import scripts.git_sync as git_sync 
+from . import scanner
+from . import git_sync 
 
 # Load environment (Prioritizes System Env Vars, falls back to .env)
 load_dotenv()

@@ -3,6 +3,7 @@ import re
 import requests
 import time
 from .utils import slugify_filename, format_pretty_title
+from .config import FORGE_CONFIG
 
 # Default keywords (to be moved to refinery-config.json in next phase)
 DEFAULT_IGNORE = FORGE_CONFIG.get("scout", "ignore_keywords")

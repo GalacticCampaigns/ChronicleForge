@@ -6,18 +6,13 @@ import re
 import requests
 from .utils import save_registry, pad_timestamp, LOCAL_REGISTRY
 from .notifier import send_update_email
-import scripts.git_sync as git_sync 
+from . import git_sync
+from .config import FORGE_CONFIG
 
 # Narrative Types for Refinement logic (DCE Types mapped to API Integers)
 # 0: Default, 19: Reply, 21: ThreadStarter
-try:
-    # Attempt to load from global config if available
-    NARRATIVE_TYPES = FORGE_CONFIG.get("forensics", "narrative_types")
-    NSFW_KEYWORDS = FORGE_CONFIG.get("forensics", "nsfw_keywords")
-except (NameError, AttributeError):
-    # Standard fallback defaults
-    NARRATIVE_TYPES = [0, 19, 21]
-    NSFW_KEYWORDS = ["🔞", "nsfw", "underage", "18+"]
+NARRATIVE_TYPES = FORGE_CONFIG.get("forensics", "narrative_types") or [0, 19, 21]
+NSFW_KEYWORDS = FORGE_CONFIG.get("forensics", "nsfw_keywords") or ["🔞", "nsfw", "underage", "18+"]
 
 class Navigator:
     def __init__(self, registry_data):
