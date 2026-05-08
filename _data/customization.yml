@@ -1,0 +1,54 @@
+# Site Customization
+# Edit this file to customize your site without causing conflicts with base updates.
+
+# Site Title
+title: "Galactic Campaigns"
+
+# Site Description
+description: "A centralized repository for our roleplay campaigns."
+
+# Paths to custom assets (relative to site root, or absolute URLs)
+# Leave blank or commented out to use the defaults.
+# favicon_path: "/assets/custom/favicon.png"
+# banner_path: "/assets/custom/banner.png"
+
+# Font Customization
+# Google Fonts URL to load
+google_fonts_url: "https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&display=swap"
+# Font families to use in CSS
+body_font: "'Open Sans', Arial, sans-serif"
+header_font: "'Montserrat', sans-serif"
+
+# Image Sizing
+logo_max_height: "150px"
+logo_max_height_mobile: "100px"
+
+# Hero Section Customization
+hero_flavor_text: "Select a frequency to begin decryption."
+
+# Footer Customization
+discord_invite: "https://discord.gg/8N2Rzjrk2n"
+show_discord_badge: true
+privacy_policy_url: "/PrivacyPolicy"
+terms_of_service_url: "/TermsofService"
+footer_version_text: "Logged into Galactic Registry Engine v3.0"
+copyright_text: "© 2026 Galactic Campaigns. All rights reserved."
+
+# Advanced Customization
+# Paste your custom scripts or analytics codes here (e.g., Google Analytics, Plausible)
+# custom_scripts: |
+#   <script>
+#     console.log('Custom script loaded');
+#   </script>
+
+# Color Customization (CSS Variables)
+# Uncomment and change the values to customize your site colors.
+colors:
+  primary_bg: "#1a202c"
+  secondary_bg: "#282c34"
+  gh_border: "#4a4f57"
+  gh_text: "#e0e0e0"
+  text_muted: "#c0c0c0"
+  accent_blue: "#61dafb"
+  accent_blue_hover: "#4fa3d1"
+  sw_yellow: "#FFC107"

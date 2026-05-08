@@ -124,7 +124,7 @@ async function updateGlobalNav() {
         if (logoImg) {
             logoImg.src = (campaign.paths && campaign.paths.logo) 
                 ? `${window.GC_STATE.remoteBase}${campaign.paths.logo}` 
-                : `${window.site_baseurl}/assets/gc_banner.png`;
+                : `${window.site_baseurl}/assets/gc_banner.png.template`;
         }
 
     } else {

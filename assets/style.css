@@ -27,7 +27,7 @@ body {
     margin: 0; padding: 0; width: 100%;
     background-color: var(--primary-bg);
     color: var(--gh-text);
-    font-family: 'Open Sans', Arial, sans-serif;
+    font-family: var(--body-font, 'Open Sans', Arial, sans-serif);
     line-height: 1.6;
 }
 
@@ -248,7 +248,7 @@ a:hover {
 
 /* --- 7. EXTENDED MARKDOWN & DISCORD ELEMENTS --- */
 .msg-content h1, .msg-content h2, .msg-content h3,.msg-content h4, .msg-content h5, .msg-content h6 {
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--header-font, 'Montserrat', sans-serif);
     margin-bottom: 0.5rem;
 }
 
@@ -515,7 +515,7 @@ body.nsfw-unlocked .nsfw-blur, .nsfw-blur.off {     filter: blur(0) !important; 
 
 .terminal-header {
     color: var(--sw-yellow); 
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--header-font, 'Montserrat', sans-serif);
     font-weight: 700;
     font-size: 1rem; 
     margin-bottom: 25px;

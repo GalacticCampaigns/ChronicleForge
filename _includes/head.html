@@ -1,10 +1,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page.title }} | Galactic Campaigns</title>
-    <link rel="icon" type="image/png" href="{{ '/assets/gc_logo.png' | relative_url }}">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}?v={{ site.time | date: '%Y%m%d%H%M%S' }}"> 
+    <title>{{ page.title }} | {{ site.data.customization.title | default: 'Galactic Campaigns' }}</title>
+    <link rel="icon" type="image/png" href="{{ site.data.customization.favicon_path | default: '/assets/gc_logo.png.template' | relative_url }}">
+    <link href="{{ site.data.customization.google_fonts_url | default: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&display=swap' }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
+
+    <!-- Custom Color Overrides -->
+    <style>
+    :root {
+        {% if site.data.customization.colors.primary_bg %}--primary-bg: {{ site.data.customization.colors.primary_bg }};{% endif %}
+        {% if site.data.customization.colors.secondary_bg %}--secondary-bg: {{ site.data.customization.colors.secondary_bg }};{% endif %}
+        {% if site.data.customization.colors.gh_border %}--gh-border: {{ site.data.customization.colors.gh_border }};{% endif %}
+        {% if site.data.customization.colors.gh_text %}--gh-text: {{ site.data.customization.colors.gh_text }};{% endif %}
+        {% if site.data.customization.colors.text_muted %}--text-muted: {{ site.data.customization.colors.text_muted }};{% endif %}
+        {% if site.data.customization.colors.accent_blue %}--accent-blue: {{ site.data.customization.colors.accent_blue }};{% endif %}
+        {% if site.data.customization.colors.accent_blue_hover %}--accent-blue-hover: {{ site.data.customization.colors.accent_blue_hover }};{% endif %}
+        {% if site.data.customization.colors.sw_yellow %}--sw-yellow: {{ site.data.customization.colors.sw_yellow }};{% endif %}
+        
+        --body-font: {{ site.data.customization.body_font | default: "'Open Sans', Arial, sans-serif" }};
+        --header-font: {{ site.data.customization.header_font | default: "'Montserrat', sans-serif" }};
+        --logo-max-height: {{ site.data.customization.logo_max_height | default: '150px' }};
+        --logo-max-height-mobile: {{ site.data.customization.logo_max_height_mobile | default: '100px' }};
+    }
+    </style> 
 
 <style>
 /* 1. BRANDING & SECRET SELECTOR */
@@ -22,7 +41,7 @@
     text-align: center; padding: 60px 20px; border-bottom: 1px solid var(--gh-border);
     background: radial-gradient(circle at center, rgba(13, 17, 23, 0.5) 0%, var(--primary-bg) 100%);
 }
-.site-logo { max-height: 150px; filter: drop-shadow(0 0 20px rgba(97, 218, 251, 0.15)); }
+.site-logo { max-height: var(--logo-max-height); filter: drop-shadow(0 0 20px rgba(97, 218, 251, 0.15)); }
 .flavor-text { color: var(--sw-yellow); font-style: italic; margin-top: 20px; font-family: monospace; font-size: 0.85rem; }
 
 /* 3. FOOTER SPECIFIC STYLES */
@@ -78,8 +97,9 @@
 
 @media (max-width: 900px) {
     .hero-section { padding: 40px 15px; }
-    .site-logo { max-height: 100px; }
+    .site-logo { max-height: var(--logo-max-height-mobile); }
 }
 </style>
 
+{{ site.data.customization.custom_scripts }}
 </head>

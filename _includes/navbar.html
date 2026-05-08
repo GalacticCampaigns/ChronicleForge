@@ -2,7 +2,7 @@
     <div class="nav-inner" style="display:flex; width:100%; align-items:center; justify-content: space-between;">
         
         <div class="campaign-selector-wrapper">
-            <a href="{{ '/' | relative_url }}" id="nav-brand-text" class="nav-brand">Galactic Campaigns</a>
+            <a href="{{ '/' | relative_url }}" id="nav-brand-text" class="nav-brand">{{ site.data.customization.title | default: 'Galactic Campaigns' }}</a>
             
             <div class="selector-container">
                 <select id="campaign-dropdown" onchange="switchCampaign(this.value)">
