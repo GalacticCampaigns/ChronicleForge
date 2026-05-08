@@ -20,7 +20,7 @@ FORGE_BASE = os.path.dirname(PROJECT_ROOT)
 # The Vault: Persistent storage shared across environments
 VAULT_DIR = os.path.join(FORGE_BASE, "vault")
 # The Master Registry: Single Source of Truth
-LOCAL_REGISTRY = os.path.join(VAULT_DIR, "campaign-registry.json")
+LOCAL_REGISTRY = os.path.join(PROJECT_ROOT, "assets", "campaign-registry.json")
 
 # Transient directories for worker processes
 TEMP_GIT_DIR = os.path.join(PROJECT_ROOT, "temp_git_sync")

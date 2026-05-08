@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<html>
   {% include head.html %}
-  <body>
+  <body class="mode-sfw">
+    {% include log-navigation-hud.html %}
     {% include navbar.html %}
 
     <header class="hero-section">
@@ -20,7 +19,7 @@
     </main>
 
     {% include footer.html %}
-
+    {% include nsfw-gateway.html %}
 
 </body>
 </html>

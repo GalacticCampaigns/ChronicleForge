@@ -1,0 +1,533 @@
+/* --- 1. CORE VARIABLES --- */
+:root {
+    --primary-bg: #1a202c;
+    --secondary-bg: #282c34;
+    --gh-border: #4a4f57;
+    --gh-text: #e0e0e0;
+    --text-muted: #c0c0c0;
+    --accent-blue: #61dafb;
+    --accent-blue-hover: #4fa3d1;
+    --sw-yellow: #FFC107;
+    
+    /* Layout Constants */
+    --site-nav-height: 50px;
+    --log-nav-height: 60px;
+}
+
+/* --- 2. GLOBAL RESET & STABILIZATION --- */
+* { box-sizing: border-box; }
+
+html { 
+    scroll-behavior: smooth; 
+    overflow-x: hidden; 
+    width: 100%; 
+}
+
+body {
+    margin: 0; padding: 0; width: 100%;
+    background-color: var(--primary-bg);
+    color: var(--gh-text);
+    font-family: 'Open Sans', Arial, sans-serif;
+    line-height: 1.6;
+}
+
+main { 
+    display: block; width: 100%; max-width: 900px; 
+    margin: 0 auto; padding: 0 15px;
+    overflow: visible !important; 
+}
+
+/* --- 3. LINK & ANCHOR FORMATTING --- */
+a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--accent-blue-hover);
+}
+
+/* Special styling for links inside log content */
+.msg-content a {
+    color: var(--accent-blue);
+    border-bottom: 1px solid transparent;
+}
+
+.msg-content a:hover {
+    border-bottom-color: var(--accent-blue);
+}
+
+/* --- 4. NAVIGATION HIERARCHY --- */
+.site-nav {
+    position: sticky; top: 0; z-index: 9000;
+    background: var(--secondary-bg);
+    border-bottom: 2px solid var(--accent-blue);
+    height: var(--site-nav-height);
+    display: flex; align-items: center; padding: 0 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.frozen-nav {
+    position: sticky; 
+    top: var(--site-nav-height);
+    z-index: 8000; 
+    background-color: var(--secondary-bg); 
+    border-bottom: 1px solid var(--gh-border);
+    min-height: var(--log-nav-height); /* Changed from height to min-height */
+    height: auto; /* Allows expansion on mobile */
+    width: 100%;
+    display: flex; 
+    align-items: center;
+    padding: 5px 0;
+    transition: height 0.3s ease-in-out, min-height 0.3s ease-in-out;
+}
+
+.nav-inner {
+    display: flex; 
+    width: 100%; 
+    max-width: 900px;
+    margin: 0 auto; 
+    gap: 10px; 
+    padding: 0 15px;
+    align-items: center; 
+    align-content: center;
+    flex-wrap: wrap; /* Allows wrapping on small screens */
+}
+
+.nav-links {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0; /* Gap is now handled by link padding and separators */
+}
+
+.nav-links a {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--gh-text);
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-decoration: none;
+    padding: 0 15px; /* Increased padding for better click targets */
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+/* Added: Vertical Separators 
+.nav-links a:not(:last-child)::after {
+    content: "|";
+    position: absolute;
+    right: 0;
+    color: var(--gh-border);
+    opacity: 0.5;
+    pointer-events: none;
+}*/
+
+.nav-links a:hover {
+    color: var(--accent-blue);
+}
+
+#dynamic-nav-links a + a {
+    border-left: 1px solid var(--gh-border);
+}
+
+/* Ensure Home (the first child) never has a left border */
+#dynamic-nav-links a:first-child {
+    padding-left: 0;
+    border-left: none;
+}
+
+/* --- 5. BREADCRUMB CONSOLE --- */
+.log-breadcrumb {
+    display: flex; 
+    align-items: center; 
+    flex-grow: 1;
+    min-width: 0; 
+    flex-wrap: wrap; /* Critical for multi-line */
+    font-family: 'Terminus', monospace; 
+    font-size: 0.95rem;
+    color: var(--sw-yellow); 
+    padding-left: 10px;
+}
+
+.breadcrumb-item { 
+    display: flex; 
+    align-items: center; 
+    white-space: nowrap; 
+    position: relative;
+    min-width: 0; /* Critical for truncation to work in flexbox */
+}
+
+#active-chapter-name {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#thread-indicator {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+#thread-indicator span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+}
+
+
+/* ADDED: Hover effect for the Chapter Name */
+.chapter-trigger {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.chapter-trigger:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-arrow { 
+    margin: 0 12px; 
+    font-size: 0.8rem; 
+    color: var(--text-muted); 
+    pointer-events: none; /* Prevents the arrow from blocking clicks */
+}
+
+.custom-nav-dropdown {
+    display: none; 
+    position: absolute; 
+    top: 100%; /* Sits exactly at the bottom of the breadcrumb */
+    left: 0; 
+    background: #1c2128; 
+    border: 1px solid var(--gh-border);
+    min-width: 300px; 
+    max-height: 400px; 
+    overflow-y: auto; 
+    z-index: 9999;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    margin-top: 5px; /* Slight gap from the breadcrumb */
+}
+
+.chapter-option {
+    padding: 12px 15px; font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer; color: var(--gh-text);
+}
+.chapter-option:hover { background: var(--sw-yellow); color: #000; }
+
+/* --- 6. DISCORD MESSAGE FEED --- */
+.message-group { 
+    display: flex; padding: 15px 10px; 
+    border-bottom: 1px solid rgba(74, 79, 87, 0.3); 
+    transition: background 0.3s; 
+}
+
+/* Auto-scrolled highlight */
+.message-group:target, .highlight-flash { 
+    background: rgba(210, 153, 34, 0.15) !important; 
+    border-left: 3px solid var(--sw-yellow); 
+}
+
+.avatar-container { 
+    width: 42px; height: 42px; margin-right: 15px; 
+    flex-shrink: 0; background: #1c2128; border-radius: 4px; overflow: hidden; 
+}
+
+.avatar { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; }
+.avatar.loaded { opacity: 1; }
+
+.username { color: var(--accent-blue); font-weight: bold; margin-right: 10px; }
+.timestamp { color: var(--text-muted); font-size: 0.75rem; font-family: monospace; }
+.msg-content { font-size: 0.95rem; word-wrap: break-word; }
+
+/* --- 7. EXTENDED MARKDOWN & DISCORD ELEMENTS --- */
+.msg-content h1, .msg-content h2, .msg-content h3,.msg-content h4, .msg-content h5, .msg-content h6 {
+    font-family: 'Montserrat', sans-serif;
+    margin-bottom: 0.5rem;
+}
+
+.subtext { display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; opacity: 0.8;}
+.emoji { height: 1.3em; vertical-align: middle; margin: 0 2px; }
+
+​/* Multi-line Code Blocks */
+pre {
+background: #0d1117;
+border: 1px solid var(--gh-border);
+border-radius: 6px;
+padding: 16px;
+margin: 10px 0;
+overflow-x: auto;
+width: 100%;
+}
+​pre code {
+background: transparent;
+padding: 0;
+display: block;
+line-height: 1.45;
+color: var(--gh-text);
+font-size: 0.85rem;
+white-space: pre; /* Essential for preserving formatting */
+}
+
+blockquote { 
+    border-left: 4px solid var(--gh-border); 
+    margin: 8px 0; padding: 2px 15px; 
+    background: rgba(255, 255, 255, 0.05); color: var(--text-muted); 
+}
+
+code { 
+    background: rgba(255, 255, 255, 0.1); 
+    padding: 0.2rem 0.4rem; border-radius: 3px; 
+    font-family: monospace; font-size: 85%; 
+}
+
+.spoiler { 
+    background-color: #4f545c; color: transparent; 
+    border-radius: 3px; padding: 0 2px; cursor: help; 
+}
+
+.spoiler.revealed, .spoiler:hover { 
+    background: rgba(255,255,255,0.1); color: inherit; 
+}
+
+/* Discord Channel References & Mentions */
+.channel-link { 
+    color: var(--sw-yellow); 
+    text-decoration: none; 
+    border-bottom: 1px dashed var(--sw-yellow); 
+    font-family: monospace; 
+    padding: 0 2px;
+    background: rgba(255, 193, 7, 0.05);
+}
+
+.channel-link:hover {
+    background: var(--sw-yellow);
+    color: var(--primary-bg);
+}
+
+/* Images & Attachments */
+.log-image { 
+    max-width: 100%; max-height: 500px; 
+    border-radius: 4px; border: 1px solid var(--gh-border); 
+    cursor: zoom-in; transition: transform 0.2s;
+}
+
+.log-image:hover { transform: scale(1.01); border-color: var(--accent-blue); }
+
+/* --- 8. UI COMPONENTS (Buttons) --- */
+.toc-open-btn, .freq-btn {
+    background: var(--secondary-bg) !important; color: var(--accent-blue) !important;
+    border: 1px solid var(--accent-blue) !important; padding: 8px 16px;
+    font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 0.75rem;
+    display: inline-flex; align-items: center; gap: 8px;
+    text-transform: uppercase;
+}
+
+.toc-open-btn:hover, .freq-btn:hover, .freq-btn.active {
+    background: var(--accent-blue) !important; color: var(--primary-bg) !important;
+    box-shadow: 0 0 10px rgba(97, 218, 251, 0.3);
+}
+
+/* --- 9. RESPONSIVE STABILIZATION --- */
+@media (max-width: 900px) {
+    .frozen-nav { height: 55px; }
+    .nav-inner { gap: 6px; padding: 0 10px; }
+    .avatar-container { width: 32px; height: 32px; margin-right: 10px; }
+    .username { font-size: 0.9rem; }
+    .log-breadcrumb { font-size: 0.85rem; }
+}
+
+@media (max-width: 600px) {
+    .frozen-nav {         padding: 8px 0;    }
+    
+    .log-breadcrumb {        flex-direction: column; /* Stacks Chapter above Thread */        align-items: flex-start;        gap: 2px;    }
+
+    #active-chapter-name {        font-size: 0.85rem;        max-width: calc(100vw - 120px); /* Leave room for buttons */    }
+
+    #thread-indicator {        font-size: 0.75rem;        padding-left: 0;        width: 100%;    }
+    
+    /* Remove the arrow on mobile or replace it with a smaller indentation */
+    #thread-indicator .nav-arrow {        margin: 0 8px 0 0;        font-size: 0.6rem;    }
+    .timestamp { display: none; } /* Hide time on very small screens to keep rows single-line */
+    .username { display: block; width: 100%; margin-bottom: 2px; }
+    .nav-inner { gap: 4px; }    
+    .comms-hud {        bottom: 20px;         right: 20px;    }
+    .hud-btn {        width: 40px;        height: 40px;        font-size: 1rem;    }
+}
+/* --- 10. FLOATING COMMS HUD --- */
+.comms-hud {    position: fixed;    bottom: 30px;    right: 30px;    display: flex;    flex-direction: column;    gap: 10px;    z-index: 9999;}
+
+.hud-btn {
+    width: 45px;    height: 45px;
+    border-radius: 50%;
+    background: var(--secondary-bg);
+    border: 1px solid var(--accent-blue);
+    color: var(--accent-blue);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.hud-btn:hover {
+    background: var(--accent-blue);
+    color: var(--primary-bg);
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(97, 218, 251, 0.4);
+}
+
+#hud-return {    border-color: var(--sw-yellow);    color: var(--sw-yellow);}
+
+#hud-return:hover {    background: var(--sw-yellow);    color: var(--primary-bg);}
+
+/* --- 11. NSFW & CONTENT SHIELDING --- */
+
+/* Text-based blurs */
+.nsfw-blur {
+    filter: blur(12px); /* Increased slightly for better security */
+    pointer-events: none;
+    user-select: none;
+    transition: filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    display: inline-block; /* Prevents blur bleed on block containers */
+    backface-visibility: hidden; /* Fixes browser "shimmer" */
+}
+
+/* Removal of blur via Global Toggle or Individual '.off' class */
+body.nsfw-unlocked .nsfw-blur, .nsfw-blur.off {     filter: blur(0) !important;    pointer-events: auto;    user-select: auto;}
+
+/* Media Shielding */
+.media-shield {
+    width: 100%;
+    max-width: 500px;
+    min-height: 200px; /* Fallback for varied aspect ratios */
+    aspect-ratio: 16 / 9;
+    background: #0a0c10;
+    border: 1px dashed #da3633;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin: 15px 0;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Added: Scanline Effect for flavor */
+.media-shield::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 4px, 3px 100%;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+.shield-overlay {
+    display: flex; 
+    align-items: center; 
+    gap: 20px;
+    z-index: 2; /* Sit above scanlines */
+}
+
+.shield-icon { font-size: 2rem; color: #da3633; text-shadow: 0 0 10px rgba(218, 54, 51, 0.5); }
+.shield-info { display: flex; flex-direction: column; text-align: left; }
+.shield-label { font-size: 0.6rem; color: var(--text-muted); letter-spacing: 2px; }
+.shield-text { color: #da3633; font-weight: bold; font-family: monospace; font-size: 0.9rem; }
+
+.decrypt-btn {
+    background: rgba(218, 54, 51, 0.1);
+    border: 1px solid #da3633;
+    color: #da3633;
+    padding: 8px 20px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.decrypt-btn:hover {
+    background: #da3633;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(218, 54, 51, 0.4);
+}
+
+/* NSFW Badge */
+.nsfw-badge {
+    background: #da3633;
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-right: 8px;
+    font-weight: 800;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.nsfw-badge:hover {
+    background-color: #da3633; /* A more "Alert" red */
+    box-shadow: 0 0 10px rgba(218, 54, 51, 0.5);
+    transform: scale(1.05);
+}
+
+/* NSFW GATEWAY MODAL */
+.nsfw-gateway {
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0, 0, 0, 0.9); 
+    z-index: 100000;
+    align-items: center; 
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.gateway-content {
+    background: #000; 
+    border: 1px solid var(--sw-yellow);
+    padding: 40px; 
+    max-width: 450px; 
+    width: 90%;
+    text-align: center; 
+    box-shadow: 0 0 40px rgba(255, 193, 7, 0.15);
+}
+
+.terminal-header {
+    color: var(--sw-yellow); 
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1rem; 
+    margin-bottom: 25px;
+    letter-spacing: 3px; 
+    border-bottom: 1px solid var(--sw-yellow);
+    padding-bottom: 15px;
+    text-transform: uppercase;
+}
+
+.gateway-actions {
+    display: flex; 
+    gap: 15px; 
+    margin-top: 35px; 
+    justify-content: center;
+}

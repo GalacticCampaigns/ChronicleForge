@@ -211,6 +211,11 @@ To perform a complete history refresh locally for verification before a live dep
 ```bash
 python3 -m scripts.pull_logs -f -d
 ```
+#### 5. Manual Push / Cold Start
+If you ran a dry-run and are satisfied with the results, or if you need to push local data without invoking the Discord Miner, use the manual push script. It forces a sync of your local `vault/` to GitHub.
+```bash
+python3 -m scripts.manual_push
+```
 
 ---
 *Developed for the Galactic Campaigns preservation project.*

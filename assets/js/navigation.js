@@ -1,0 +1,285 @@
+// assets/js/navigation.js
+
+window.GC_STATE = {
+    registry: null,
+    currentCampaign: null,
+    campaignSlug: null,
+    remoteBase: "",
+    isReady: false,
+    // --- NSFW & NAVIGATION STATE ---
+    nsfwEnabled: localStorage.getItem('GC_NSFW_ENABLED') === 'true',
+    mediaRegistry: null,
+    lastScrollPos: 0,
+    hasJumped: false
+};
+
+/**
+ * Shared utility to fetch the registry once with cache busting.
+ */
+async function getRegistry() {
+    if (window.GC_STATE.registry) return window.GC_STATE.registry;
+    try {
+        const res = await fetch(`${window.site_baseurl}/assets/campaign-registry.json?t=${Date.now()}`);
+        if (!res.ok) throw new Error("Registry network response was not ok");
+        window.GC_STATE.registry = await res.json();
+        return window.GC_STATE.registry;
+    } catch (e) {
+        console.error("Registry Load Failed:", e);
+        return null;
+    }
+}
+
+/**
+ * Standardizes how we extract campaign and channel info from the URL
+ */
+function getUrlContext() {
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash.substring(1);
+    const [primaryHash, messageId] = hash.split(':');
+    
+    return {
+        slug: params.get('c'),
+        channelId: primaryHash || null,
+        messageId: messageId || null
+    };
+}
+
+/**
+ * Updates the global Navbar and hydrates the GC_STATE for the Vault structure.
+ */
+async function updateGlobalNav() {
+    const registry = await getRegistry();
+    const { slug } = getUrlContext();
+    const dropdown = document.getElementById('campaign-dropdown');
+    const brandText = document.getElementById('nav-brand-text');
+    const flavorText = document.getElementById('flavor-text');
+    
+    if (!registry) return;
+
+    // 1. Populate dropdown if empty
+    if (dropdown && dropdown.options.length <= 2) {
+        Object.keys(registry.campaigns).forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = registry.campaigns[s].name;
+            dropdown.appendChild(opt);
+        });
+    }
+
+    if (dropdown && slug) dropdown.value = slug;
+
+    if (slug && registry.campaigns[slug]) {
+        const campaign = registry.campaigns[slug];
+        window.GC_STATE.campaignSlug = slug;
+        window.GC_STATE.currentCampaign = campaign;
+
+        // --- VAULT PATH RESOLUTION ---
+        // Mirroring the Python refinery logic: Repo + Branch + dataPath
+        let cleanDataPath = (campaign.dataPath || "").replace(/^\.\//, "");
+        if (cleanDataPath && !cleanDataPath.endsWith('/')) cleanDataPath += '/';
+        
+        window.GC_STATE.remoteBase = `https://raw.githubusercontent.com/${campaign.repository}/${campaign.branch}/${cleanDataPath}`;
+
+        // Fetch Remote Media Registry (NSFW files and Warnings)
+        const mediaRegistryPath = getMediaRegistryPath(campaign);
+        if (mediaRegistryPath) {
+            try {
+                const mediaResp = await fetch(`${mediaRegistryPath}?t=${Date.now()}`, { cache: "no-cache" });
+                if (mediaResp.ok) {
+                    const mediaData = await mediaResp.json();
+                    window.GC_STATE.mediaRegistry = mediaData.nsfw_files || [];
+                    window.GC_STATE.contentWarnings = mediaData.content_warnings || {};
+                }
+            } catch (e) {
+                console.error("Failed to fetch remote media registry:", e);
+            }
+        }
+
+        // --- UI UPDATES ---
+        if (brandText) {
+            brandText.textContent = campaign.name;
+            brandText.href = `${window.site_baseurl}/?c=${slug}`;
+        }
+
+        if (flavorText) {
+            flavorText.textContent = campaign.description || "Decrypting narrative stream...";
+        }
+        
+        // Update navigation links
+        document.querySelectorAll('.campaign-link').forEach(el => {
+            el.style.display = 'inline-block';
+            if (el.id === 'nav-archives') el.href = `${window.site_baseurl}/archives?c=${slug}`;
+            if (el.id === 'nav-wiki') {
+                if (campaign.paths && campaign.paths.wiki) {
+                    el.href = campaign.paths.wiki;
+                    el.style.display = 'inline-block';
+                } else {
+                    el.style.display = 'none';
+                }
+            }
+        });
+
+        // Logo Handling
+        const logoImg = document.getElementById('site-logo');
+        if (logoImg) {
+            logoImg.src = (campaign.paths && campaign.paths.logo) 
+                ? `${window.GC_STATE.remoteBase}${campaign.paths.logo}` 
+                : `${window.site_baseurl}/assets/gc_banner.png`;
+        }
+
+    } else {
+        // Fallback for Hub View
+        if (brandText) {
+            brandText.textContent = "Galactic Campaigns";
+            brandText.href = `${window.site_baseurl}/`;
+        }
+        document.querySelectorAll('.campaign-link').forEach(el => el.style.display = 'none');
+    }
+
+    if (typeof syncNSFWUI === 'function') syncNSFWUI();
+
+    window.GC_STATE.isReady = true;
+    document.dispatchEvent(new CustomEvent('GCStateReady'));
+    triggerLayoutReflow();
+}
+
+/**
+ * Resolves the remote path for a campaign-specific media registry using Vault pathing.
+ */
+function getMediaRegistryPath(campaign) {
+    if (!campaign.paths || !campaign.paths.mediaRegistry) return null;
+
+    let cleanDataPath = (campaign.dataPath || "").replace(/^\.\//, "");
+    if (cleanDataPath && !cleanDataPath.endsWith('/')) cleanDataPath += '/';
+
+    const gitHubUrl = `https://raw.githubusercontent.com/${campaign.repository}/${campaign.branch}/${cleanDataPath}`;
+    return `${gitHubUrl}${campaign.paths.mediaRegistry}`;
+}
+
+// --- PROTOCOL: NSFW & GATEWAY ---
+function handleNSFWClick() {
+    if (window.GC_STATE.nsfwEnabled) toggleNSFW();
+    else showProtocolOverride();
+}
+
+function toggleNSFW() {
+    window.GC_STATE.nsfwEnabled = !window.GC_STATE.nsfwEnabled;
+    localStorage.setItem('GC_NSFW_ENABLED', window.GC_STATE.nsfwEnabled);
+    syncNSFWUI();
+    document.dispatchEvent(new CustomEvent('NSFWStateChanged'));
+}
+
+function syncNSFWUI() {
+    const isEnabled = window.GC_STATE.nsfwEnabled;
+    document.body.classList.toggle('nsfw-unlocked', isEnabled);
+    document.querySelectorAll('.nsfw-blur').forEach(el => el.classList.toggle('off', isEnabled));
+
+    const btn = document.getElementById('nsfw-toggle-btn');
+    if (btn) {
+        btn.textContent = isEnabled ? "FILTER: OFF (MATURE)" : "FILTER: ON (SECURE)";
+        btn.classList.toggle('active', isEnabled);
+    }
+}
+
+function detectNSFW(msg) {
+    if (msg.isNSFW === true) return true;
+    if (msg.reactions && msg.reactions.length > 0) {
+        return msg.reactions.some(r => r.emoji.name === '🔞' || r.emoji.name === 'underage');
+    }
+    return false;
+}
+
+function showProtocolOverride() {
+    let modal = document.getElementById('nsfw-gateway');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'nsfw-gateway';
+        modal.className = 'nsfw-gateway';
+        modal.innerHTML = `
+            <div class="gateway-content">
+                <div class="terminal-header">SYSTEM ALERT: PROTOCOL OVERRIDE</div>
+                <p>Sensitive data detected. Proceeding will expose mature content. Confirm authorization?</p>
+                <div class="gateway-actions">
+                    <button class="decrypt-btn" onclick="confirmNSFW()">EXECUTE OVERRIDE</button>
+                    <button class="freq-btn" onclick="closeNSFWGateway()">ABORT</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+}
+
+function closeNSFWGateway() {
+    const modal = document.getElementById('nsfw-gateway');
+    if (modal) modal.style.display = 'none';
+}
+
+function confirmNSFW() {
+    if (!window.GC_STATE.nsfwEnabled) toggleNSFW();
+    closeNSFWGateway();
+}
+
+// --- NAVIGATION HUD LOGIC ---
+function jumpToBottom() {
+    window.GC_STATE.lastScrollPos = window.scrollY;
+    window.GC_STATE.hasJumped = true;
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    updateHUDVisibility();
+}
+
+function jumpToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+function returnToPosition() {
+    if (window.GC_STATE.hasJumped) {
+        window.scrollTo({ top: window.GC_STATE.lastScrollPos, behavior: 'smooth' });
+        window.GC_STATE.hasJumped = false;
+        updateHUDVisibility();
+    }
+}
+
+function updateHUDVisibility() {
+    const returnBtn = document.getElementById('hud-return');
+    if (returnBtn) returnBtn.style.display = window.GC_STATE.hasJumped ? 'flex' : 'none';
+}
+
+// --- LAYOUT & TRUNCATION ---
+function triggerLayoutReflow() {
+    const { slug } = getUrlContext();
+    if (!slug || !window.GC_STATE.currentCampaign) return;
+
+    const brandText = document.getElementById('nav-brand-text');
+    if (brandText) {
+        let name = window.GC_STATE.currentCampaign.name;
+        if (window.innerWidth < 450 && name.length > 20) {
+            brandText.textContent = name.substring(0, 17) + "...";
+        } else {
+            brandText.textContent = name;
+        }
+    }
+
+    if (typeof updateBreadcrumb === 'function' && window.GC_STATE.currentMainChannelId) {
+        const activeLog = window.GC_STATE.currentCampaign.logs.find(
+            l => l.channelID === window.GC_STATE.currentMainChannelId
+        );
+        if (activeLog) {
+            const currentHash = window.location.hash.substring(1).split(':')[0] || 'all';
+            let threadName = (currentHash === 'all') ? "COMBINED FEED" : 
+                             (currentHash === window.GC_STATE.currentMainChannelId ? "PRIMARY FEED" : (window.channelMap[currentHash] || null));
+            updateBreadcrumb(activeLog.title, threadName);
+        }
+    }
+}
+
+window.addEventListener('resize', () => {
+    clearTimeout(window.GC_STATE.resizeTimer);
+    window.GC_STATE.resizeTimer = setTimeout(triggerLayoutReflow, 150);
+});
+
+window.onclick = (e) => {
+    if (!e.target.closest('.chapter-trigger')) {
+        const d = document.getElementById('chapter-list-dropdown');
+        if (d) d.style.display = 'none';
+    }
+};
+
+document.addEventListener("DOMContentLoaded", updateGlobalNav);
