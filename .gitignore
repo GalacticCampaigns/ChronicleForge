@@ -8,6 +8,7 @@ wiki
 /refinery-config.json
 _data/customization.yml
 assets/campaign-registry.json
+/_config.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
