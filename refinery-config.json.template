@@ -1,13 +1,12 @@
 {
   "scout": {
     "auto_scan_pattern": "ch|chapter|prelude",
-    "ignore_keywords": ["ooc", "out of character", "gm", "staff", "test"],
+    "ignore_keywords": ["ooc", "gm", "staff", "test"],
     "forum_is_chapter": true
   },
   "refinery": {
     "truncation_limit": 100,
-    "content_scan_version": 4,
-    "standard_discriminator": "0000"
+    "content_scan_version": 4
   },
   "forensics": {
     "nsfw_threshold": 0.90,
@@ -15,7 +14,6 @@
     "narrative_types": [0, 19, 21]
   },
   "git_aliases": {
-    "alicia86": "github.com-alicia86",
-    "GalacticCampaigns": "github.com-alicia86"
+    "YourGitHubUser": "github.com-alias"
   }
 }
