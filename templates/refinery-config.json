@@ -16,7 +16,12 @@
   "discord": {
     "api_version": "v10"
   },
+  "git": {
+    "bot_name": "Chronicle Forge Bot",
+    "bot_email": "noreply@noreply.com"
+  },
   "git_aliases": {
     "YourGitHubUser": "github.com-alias"
   }
 }
+
