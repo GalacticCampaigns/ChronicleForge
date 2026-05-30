@@ -212,6 +212,17 @@ def sync_website_registry(repo_path_str, updated_registry_dict, branch="main"):
 
 
     run_git(["add", "."], cwd=repo_local_path)
+    
+    # Porcelain check: Avoid error-raising empty commits if registry is already up to date
+    status = run_git(["status", "--porcelain"], cwd=repo_local_path)
+    if isinstance(status, str) or not status.stdout.strip():
+        if DEBUG_MODE:
+            print("      [Git Debug] External registry is already current. Skipping commit/push.")
+        else:
+            print("      ℹ️ [Git] External registry is already current.")
+        shutil.rmtree(repo_local_path, ignore_errors=True)
+        return True
+
     commit = run_git(["commit", "-m", f"chore(brain): automated registry update by {FORGE_CONFIG.bot_name}"], cwd=repo_local_path)
     
     if isinstance(commit, str):
