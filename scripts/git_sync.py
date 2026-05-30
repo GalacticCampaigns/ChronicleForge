@@ -217,6 +217,9 @@ def sync_website_registry(repo_path_str, updated_registry_dict, branch="main"):
     status = run_git(["status", "--porcelain"], cwd=repo_local_path)
     if isinstance(status, str):
         shutil.rmtree(repo_local_path, ignore_errors=True)
+    status = run_git(["status", "--porcelain"], cwd=repo_local_path)
+    if isinstance(status, str):
+        shutil.rmtree(repo_local_path, ignore_errors=True)
         return status
     if not status.stdout.strip():
         if DEBUG_MODE:
