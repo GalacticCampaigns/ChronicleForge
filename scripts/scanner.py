@@ -84,7 +84,28 @@ def get_new_discoveries(camp_data, bot_token, nav):
         log.setdefault("isActive", True)
         log.setdefault("syncStatus", "active")
         log.setdefault("last_synced_id", "")
-        log.setdefault("isNSFW", live_info.get("nsfw", False))
+        
+        # Migrate legacy isNSFW/nsfwCount fields to dynamic tags list
+        legacy_nsfw = log.pop("isNSFW", None)
+        log.pop("nsfwCount", None) # Remove legacy count
+        tags_list = log.get("tags")
+        if not isinstance(tags_list, list):
+            tags_list = []
+            log["tags"] = tags_list
+        if legacy_nsfw or live_info.get("nsfw", False):
+            if "nsfw" not in tags_list:
+                tags_list.append("nsfw")
+
+        # Migrate thread legacy isNSFW fields
+        for t in log.get("threads", []):
+            t_legacy = t.pop("isNSFW", None)
+            t.pop("nsfwCount", None)
+            t_tags = t.get("tags")
+            if not isinstance(t_tags, list):
+                t_tags = []
+                t["tags"] = t_tags
+            if t_legacy and "nsfw" not in t_tags:
+                t_tags.append("nsfw")
 
     # --- 2. CHAPTER DISCOVERY (Standard & Forums) ---
     existing_logs = {str(log["channelID"]): log for log in camp_data.get("logs", [])}
@@ -158,7 +179,8 @@ def get_new_discoveries(camp_data, bot_token, nav):
                 "isActive": not is_ooc,
                 "syncStatus": "stable" if is_archived else "active",
                 "last_synced_id": "",
-                "messageCount": 0
+                "messageCount": 0,
+                "tags": []
             }
             parent_log.setdefault("threads", []).append(new_thread)
             if not is_ooc:
@@ -179,6 +201,10 @@ def build_registry_entry(discord_obj, parent_id=None):
     raw_name = discord_obj.get("name", "unknown")
     slug_base = slugify_filename(raw_name).replace(".json", "")
         
+    tags = []
+    if discord_obj.get("nsfw", False):
+        tags.append("nsfw")
+        
     return {
         "title": format_pretty_title(raw_name),
         "channelID": str(discord_obj["id"]),
@@ -190,8 +216,8 @@ def build_registry_entry(discord_obj, parent_id=None):
         "syncStatus": "active",
         "last_synced_id": "",
         "messageCount": 0,
+        "tags": tags,
         "lastMessageTimestamp": "",
-        "isNSFW": discord_obj.get("nsfw", False),
         "source_exists": True, # Forge tracking
         "threads": []
     }
