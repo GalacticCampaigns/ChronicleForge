@@ -39,9 +39,9 @@ class Navigator:
         """
         parent_id = str(log_entry.get("channelID"))
         tags_config = FORGE_CONFIG.content_tags
-        # Pre-lowercase keywords for efficiency
+        # Pre-lowercase keywords for efficiency (safely handles None/missing keywords)
         tags_keywords = {
-            tag_name: [w.lower() for w in tag_info.get("keywords", [])]
+            tag_name: [w.lower() for w in (tag_info.get("keywords") or [])]
             for tag_name, tag_info in tags_config.items()
         }
         
@@ -91,20 +91,58 @@ class Navigator:
                 # Dynamic Tags Detection
                 for tag_name, tag_info in tags_config.items():
                     keywords = tags_keywords[tag_name]
+                    emoji_val = tag_info.get("emoji")
+                    
+                    raw_scope = tag_info.get("search_scope")
+                    if isinstance(raw_scope, list):
+                        search_scopes = [s.lower() for s in raw_scope]
+                    elif isinstance(raw_scope, str):
+                        search_scopes = [raw_scope.lower()]
+                    else:
+                        search_scopes = ["reactions", "body", "title"] if keywords else ["reactions"]
+                        
                     is_msg_tagged = False
                     
-                    # Check Reactions
-                    for r in (msg.get("reactions") or []):
-                        ename = (r.get("emoji") or {}).get("name", "").lower()
-                        if any(word in ename for word in keywords):
-                            is_msg_tagged = True
-                            break
-                    
-                    # Check Content
-                    if not is_msg_tagged:
-                        content = (msg.get("content") or "").lower()
-                        if any(word in content for word in keywords):
-                            is_msg_tagged = True
+                    # 1. Match by Emoji (if configured)
+                    if emoji_val:
+                        for r in (msg.get("reactions") or []):
+                            emoji_obj = r.get("emoji") or {}
+                            ename = emoji_obj.get("name", "")
+                            ecode = emoji_obj.get("code", "")
+                            if emoji_val == ename or emoji_val == ecode:
+                                is_msg_tagged = True
+                                break
+                                
+                    # 2. Match by Keywords (if configured)
+                    if not is_msg_tagged and keywords:
+                        # Determine what to search
+                        search_texts = []
+                        if "reactions" in search_scopes:
+                            # Search reaction names/codes
+                            for r in (msg.get("reactions") or []):
+                                emoji_obj = r.get("emoji") or {}
+                                ename = emoji_obj.get("name", "").lower()
+                                ecode = emoji_obj.get("code", "").lower()
+                                search_texts.extend([ename, ecode])
+                        if "body" in search_scopes:
+                            search_texts.append((msg.get("content") or "").lower())
+                        if "title" in search_scopes:
+                            # Find the title for the current message's channel/thread
+                            chan_title = ""
+                            if msg_chan_id == parent_id:
+                                chan_title = log_entry.get("title") or ""
+                            else:
+                                for t in log_entry.get("threads", []):
+                                    if str(t.get("threadID")) == msg_chan_id:
+                                        chan_title = t.get("displayName") or ""
+                                        break
+                            search_texts.append(chan_title.lower())
+                                
+                        # Run keyword matching
+                        for text in search_texts:
+                            if any(word in text for word in keywords):
+                                is_msg_tagged = True
+                                break
                     
                     if is_msg_tagged:
                         forensics["tag_stats"][tag_name]["grand_count"] += 1
@@ -149,6 +187,11 @@ class Navigator:
             log_tag_stats = {}
             log_entry["tagStats"] = log_tag_stats
         
+        tags_keywords = {
+            tag_name: [w.lower() for w in (tag_info.get("keywords") or [])]
+            for tag_name, tag_info in tags_config.items()
+        }
+        
         for tag_name, tag_info in tags_config.items():
             threshold = tag_info.get("threshold", 0.90)
             
@@ -156,7 +199,18 @@ class Navigator:
             p_tag_count = forensics["tag_stats"][tag_name]["parent_count"]
             parent_pct = p_tag_count / p_total if p_total > 0 else 0
             
-            is_active = parent_pct >= threshold
+            # Force active if tag emoji or keywords are in the channel title
+            title_text = (log_entry.get("title") or "").lower()
+            emoji_val = tag_info.get("emoji")
+            keywords = tags_keywords.get(tag_name, [])
+            
+            title_has_tag = False
+            if emoji_val and emoji_val.lower() in title_text:
+                title_has_tag = True
+            elif keywords and any(word in title_text for word in keywords):
+                title_has_tag = True
+                
+            is_active = (parent_pct >= threshold) or title_has_tag
             
             log_tag_stats[tag_name] = {
                 "count": forensics["tag_stats"][tag_name]["grand_count"],
@@ -176,6 +230,8 @@ class Navigator:
                 log_entry["nsfwCount"] = forensics["tag_stats"]["nsfw"]["grand_count"]
                 if is_active:
                     log_entry["isNSFW"] = True
+                else:
+                    log_entry.pop("isNSFW", None)
             
         log_entry["messageCount"] = forensics["grand_total"]
         if forensics["narrative_max_ts"]:
@@ -208,7 +264,18 @@ class Navigator:
                     t_tag_count = stats["tag_counts"].get(tag_name, 0)
                     thread_pct = t_tag_count / t_total if t_total > 0 else 0
                     
-                    is_active = thread_pct >= threshold
+                    # Force active if tag emoji or keywords are in the thread title
+                    t_title_text = (t.get("displayName") or "").lower()
+                    emoji_val = tag_info.get("emoji")
+                    keywords = tags_keywords.get(tag_name, [])
+                    
+                    t_title_has_tag = False
+                    if emoji_val and emoji_val.lower() in t_title_text:
+                        t_title_has_tag = True
+                    elif keywords and any(word in t_title_text for word in keywords):
+                        t_title_has_tag = True
+                        
+                    is_active = (thread_pct >= threshold) or t_title_has_tag
                     
                     t_tag_stats[tag_name] = {
                         "count": t_tag_count,
@@ -228,6 +295,8 @@ class Navigator:
                         t["nsfwCount"] = t_tag_count
                         if is_active:
                             t["isNSFW"] = True
+                        else:
+                            t.pop("isNSFW", None)
                 
                 if stats["abs_last_id"]:
                     t["last_synced_id"] = stats["abs_last_id"]
